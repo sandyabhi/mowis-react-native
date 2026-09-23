@@ -37,6 +37,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8786f0a0-86f2-4efa-95ec-409ebc4c1a15"
+      }
+    },
+    "owner": "patelsandeeps-mowis"
   }
 }
