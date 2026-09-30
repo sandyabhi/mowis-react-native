@@ -25,7 +25,6 @@ export default function StreamflowLayer({ geoJSON, onSensorPress }) {
 
           "circle-color": [
             "match",
-
             ["get", "floodCategory"],
 
             "action",

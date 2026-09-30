@@ -2,36 +2,159 @@ import { useEffect, useState } from "react";
 
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-import SensorDetailsModal from "@/components/map/layers/sensorsDetailsModal";
-import MapControls from "@/components/map/mapControls";
-import MowisMap from "@/components/map/mowisMap";
+import MowisMap from "@/components/map/MowisMap";
+
+import BottomNavigation from "@/components/map/controls/BottomNavigation";
+import TopLeftControls from "@/components/map/controls/TopLeftControls";
+import FloodDetailsModal from "@/components/map/modals/FloodDetailsModal";
+import SensorDetailsModal from "@/components/map/modals/SensorsDetailsModal";
 
 import { fetchStreamflowData } from "@/services/streamflowService";
 
 import { streamflowToGeoJSON } from "@/utils/streamflowGeoJson";
 
+import { useMap } from "@/components/map/context/MapContext";
+
+import { fetchFloodGeoJSON } from "@/services/floodService";
+import { fetchRailroadData } from "@/services/railroadService";
+
 export default function MapScreen() {
   const [sensorGeoJSON, setSensorGeoJSON] = useState(null);
-
-  const [loadingSensors, setLoadingSensors] = useState(true);
-
-  const [sensorError, setSensorError] = useState(null);
-
-  const [showSensors, setShowSensors] = useState(true);
-
-  const [showWeather, setShowWeather] = useState(false);
-
-  const [showDrought, setShowDrought] = useState(false);
-
   const [selectedSensor, setSelectedSensor] = useState(null);
 
-  const [weatherFrame, setWeatherFrame] = useState(72);
+  const [loadingSensors, setLoadingSensors] = useState(true);
+  const [sensorError, setSensorError] = useState(null);
 
-  const [droughtImageNumber, setDroughtImageNumber] = useState(1);
+  const [selectedFlood, setSelectedFlood] = useState(null);
+  console.log("selected flood polygon", selectedFlood);
 
-  // ----------------------------------------
-  // LOAD SENSOR DATA
-  // ----------------------------------------
+  const {
+    showWeather,
+    setWeatherFrame,
+    activeLayer,
+    floodType,
+    setFloodGeoJSON,
+    setFloodLoading,
+    setFloodError,
+    railroadData,
+    setRailroadData,
+
+    railroadNetworkGeoJSON,
+    setRailroadNetworkGeoJSON,
+
+    railroadLoading,
+    setRailroadLoading,
+
+    railroadError,
+    setRailroadError,
+  } = useMap();
+
+  const [selectedRailroad, setSelectedRailroad] = useState(null);
+  useEffect(() => {
+    if (activeLayer !== "railroad") {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadRailroad() {
+      try {
+        setRailroadLoading(true);
+        setRailroadError(null);
+
+        const forecastData = await fetchRailroadData();
+
+        if (cancelled) return;
+
+        setRailroadData(forecastData);
+        // setRailroadNetworkGeoJSON(networkData);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Railroad loading error:", error);
+          setRailroadError(error.message);
+        }
+      } finally {
+        if (!cancelled) {
+          setRailroadLoading(false);
+        }
+      }
+    }
+
+    loadRailroad();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeLayer,
+    setRailroadData,
+    setRailroadNetworkGeoJSON,
+    setRailroadLoading,
+    setRailroadError,
+  ]);
+
+  function handleRailroadPress(event) {
+    const features = event?.nativeEvent?.features;
+
+    if (!features?.length) {
+      return;
+    }
+
+    setSelectedRailroad(features[0].properties);
+  }
+
+  useEffect(() => {
+    if (activeLayer !== "flood") {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadFlood() {
+      try {
+        setFloodLoading(true);
+        setFloodError(null);
+
+        const geoJSON = await fetchFloodGeoJSON(floodType);
+
+        if (cancelled) {
+          return;
+        }
+
+        setFloodGeoJSON(geoJSON);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Flood data error:", error);
+          setFloodError(error.message);
+        }
+      } finally {
+        if (!cancelled) {
+          setFloodLoading(false);
+        }
+      }
+    }
+
+    loadFlood();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeLayer, floodType, setFloodGeoJSON, setFloodLoading, setFloodError]);
+
+  function handleFloodPress(event) {
+    console.log("FLOOD LAYER PRESSED:", event);
+
+    const features = event?.nativeEvent?.features;
+
+    if (!features?.length) {
+      console.log("No flood feature");
+      return;
+    }
+
+    console.log("Selected flood:", features[0]);
+
+    setSelectedFlood(features[0]);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -69,33 +192,20 @@ export default function MapScreen() {
     };
   }, []);
 
-  // ----------------------------------------
-  // WEATHER ANIMATION
-  // ----------------------------------------
+  // // Weather animation
+  // useEffect(() => {
+  //   if (!showWeather) {
+  //     return;
+  //   }
 
-  useEffect(() => {
-    if (!showWeather) {
-      return;
-    }
+  //   const interval = setInterval(() => {
+  //     setWeatherFrame((current) => {
+  //       return current >= 72 ? 1 : current + 1;
+  //     });
+  //   }, 200);
 
-    const interval = setInterval(() => {
-      setWeatherFrame((current) => {
-        if (current >= 72) {
-          return 1;
-        }
-
-        return current + 1;
-      });
-    }, 200);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [showWeather]);
-
-  // ----------------------------------------
-  // SENSOR CLICK
-  // ----------------------------------------
+  //   return () => clearInterval(interval);
+  // }, [showWeather, setWeatherFrame]);
 
   function handleSensorPress(event) {
     const features = event?.nativeEvent?.features;
@@ -111,22 +221,14 @@ export default function MapScreen() {
     <View style={styles.container}>
       <MowisMap
         sensorGeoJSON={sensorGeoJSON}
-        showSensors={showSensors}
-        showWeather={showWeather}
-        showDrought={showDrought}
-        weatherFrame={weatherFrame}
-        droughtImageNumber={droughtImageNumber}
         onSensorPress={handleSensorPress}
+        onFloodPress={handleFloodPress}
+        onRailroadPress={handleRailroadPress}
       />
 
-      <MapControls
-        showSensors={showSensors}
-        showWeather={showWeather}
-        showDrought={showDrought}
-        onToggleSensors={() => setShowSensors((value) => !value)}
-        onToggleWeather={() => setShowWeather((value) => !value)}
-        onToggleDrought={() => setShowDrought((value) => !value)}
-      />
+      <TopLeftControls />
+
+      {/* <TopRightControls /> */}
 
       {loadingSensors && (
         <View style={styles.loading}>
@@ -148,6 +250,13 @@ export default function MapScreen() {
         sensor={selectedSensor}
         onClose={() => setSelectedSensor(null)}
       />
+
+      <FloodDetailsModal
+        flood={selectedFlood}
+        onClose={() => setSelectedFlood(null)}
+      />
+
+      <BottomNavigation />
     </View>
   );
 }
@@ -183,7 +292,7 @@ const styles = StyleSheet.create({
   error: {
     position: "absolute",
 
-    bottom: 30,
+    bottom: 90,
     left: 12,
     right: 12,
 
@@ -194,14 +303,3 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 });
-
-// import MapScreen from "@/components/map/MapApp";
-// import { View } from "react-native";
-
-// export default function HomeScreen() {
-//   return (
-//     <View style={{ flex: 1 }}>
-//       <MapScreen />
-//     </View>
-//   );
-// }
