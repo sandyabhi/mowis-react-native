@@ -52,10 +52,17 @@ export default function MowisMap({
 
       <BaseMapLayer />
 
+      {/* 
       <WeatherLayer
         visible={activeLayer === "weather"}
         frame={weatherFrame}
         type={weatherType}
+      /> 
+      */}
+      <WeatherLayer
+        visible={activeLayer === "weather"}
+        type={weatherType}
+        frame={weatherFrame}
       />
 
       <DroughtLayer

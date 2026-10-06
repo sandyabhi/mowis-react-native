@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from "react";
+import { fetchLatestWeatherTime } from "@/services/weatherService";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const MapContext = createContext(null);
 
@@ -6,12 +7,52 @@ export function MapProvider({ children }) {
   const [activeLayer, setActiveLayer] = useState("weather");
 
   const [showSensors, setShowSensors] = useState(false);
+
   const [showWeather, setShowWeather] = useState(true);
-  const [showDrought, setShowDrought] = useState(false);
-
   const [weatherType, setWeatherType] = useState("Current");
+  const [weatherDate, setWeatherDate] = useState(null);
   const [weatherFrame, setWeatherFrame] = useState(72);
+  const [latestWeatherDate, setLatestWeatherDate] = useState(null);
 
+  // useEffect(() => {
+  //   async function loadLatestWeather() {
+  //     try {
+  //       const latest = await fetchLatestWeatherTime();
+
+  //       setLatestWeatherDate(latest);
+  //       setWeatherFrame(72);
+  //     } catch (error) {
+  //       console.error("Failed to load latest weather:", error);
+  //     }
+  //   }
+
+  //   loadLatestWeather();
+  // }, []);
+  useEffect(() => {
+    async function loadLatestWeather() {
+      try {
+        console.log("Loading latest weather...");
+
+        const latest = await fetchLatestWeatherTime();
+
+        console.log("Setting latestWeatherDate:", latest);
+        console.log("Setting weatherFrame: 72");
+
+        setLatestWeatherDate(latest);
+        setWeatherFrame(72);
+      } catch (error) {
+        console.error("Failed to load latest weather:", error);
+      }
+    }
+
+    loadLatestWeather();
+  }, []);
+
+  useEffect(() => {
+    setWeatherFrame(weatherType === "Current" ? 72 : 1);
+  }, [weatherType]);
+
+  const [showDrought, setShowDrought] = useState(false);
   const [droughtImageNumber, setDroughtImageNumber] = useState(1);
 
   const [floodType, setFloodType] = useState("current-flood");
@@ -35,40 +76,33 @@ export function MapProvider({ children }) {
 
         showWeather,
         setShowWeather,
+        weatherType,
+        setWeatherType,
+        weatherFrame,
+        setWeatherFrame,
+        latestWeatherDate,
+        setLatestWeatherDate,
 
         showDrought,
         setShowDrought,
-
-        weatherType,
-        setWeatherType,
-
-        weatherFrame,
-        setWeatherFrame,
-
         droughtImageNumber,
         setDroughtImageNumber,
 
         floodType,
         setFloodType,
-
         floodGeoJSON,
         setFloodGeoJSON,
-
         floodLoading,
         setFloodLoading,
-
         floodError,
         setFloodError,
 
         railroadData,
         setRailroadData,
-
         railroadNetworkGeoJSON,
         setRailroadNetworkGeoJSON,
-
         railroadLoading,
         setRailroadLoading,
-
         railroadError,
         setRailroadError,
       }}

@@ -5,6 +5,9 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import MowisMap from "@/components/map/MowisMap";
 
 import BottomNavigation from "@/components/map/controls/BottomNavigation";
+import CumulativeWeatherControls from "@/components/map/controls/CummulativeWeatherControls";
+import CurrentWeatherControls from "@/components/map/controls/CurrentWeatherControls";
+import DailyWeatherControls from "@/components/map/controls/DailyWeatherControls";
 import TopLeftControls from "@/components/map/controls/TopLeftControls";
 import FloodDetailsModal from "@/components/map/modals/FloodDetailsModal";
 import SensorDetailsModal from "@/components/map/modals/SensorsDetailsModal";
@@ -32,19 +35,20 @@ export default function MapScreen() {
     showWeather,
     setWeatherFrame,
     activeLayer,
+    weatherFrame,
+    weatherType,
+
     floodType,
     setFloodGeoJSON,
     setFloodLoading,
     setFloodError,
+
     railroadData,
     setRailroadData,
-
     railroadNetworkGeoJSON,
     setRailroadNetworkGeoJSON,
-
     railroadLoading,
     setRailroadLoading,
-
     railroadError,
     setRailroadError,
   } = useMap();
@@ -227,6 +231,18 @@ export default function MapScreen() {
       />
 
       <TopLeftControls />
+
+      {activeLayer === "weather" && weatherType === "Current" && (
+        <CurrentWeatherControls />
+      )}
+
+      {activeLayer === "weather" && weatherType === "Daily" && (
+        <DailyWeatherControls />
+      )}
+
+      {activeLayer === "weather" && weatherType === "Cumulative" && (
+        <CumulativeWeatherControls />
+      )}
 
       {/* <TopRightControls /> */}
 
