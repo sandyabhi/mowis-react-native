@@ -14,6 +14,7 @@ export default function TopLeftControls() {
     setWeatherType,
     droughtImageNumber,
     setDroughtImageNumber,
+    setShowDroughtCalendar,
   } = useMap();
 
   function renderOptions() {
@@ -125,7 +126,6 @@ export default function TopLeftControls() {
       return (
         <>
           <Text style={styles.title}>Drought</Text>
-
           <Option
             label="Drought Map"
             selected={droughtImageNumber === 1}

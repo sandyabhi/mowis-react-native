@@ -41,7 +41,7 @@ export default function BottomNavigation() {
         return (
           <Pressable
             key={item.id}
-            style={styles.item}
+            style={[styles.item, active && styles.activeItem]}
             onPress={() => setActiveLayer(item.id)}
           >
             <Image
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "white",
     borderRadius: 14,
-    paddingVertical: 5,
     elevation: 8,
+    padding: 5,
   },
 
   item: {
@@ -94,97 +94,13 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontWeight: "700",
   },
+
+  activeItem: {
+    borderWidth: 0.4,
+    borderStyle: "dotted",
+    borderRadius: 14,
+    borderColor: "#007AFF",
+  },
+
+  activeIcon: { transform: [{ scale: 1.1 }] },
 });
-
-// import { Pressable, StyleSheet, Text, View } from "react-native";
-
-// import { useMap } from "../context/MapContext";
-
-// const ITEMS = [
-//   {
-//     id: "flood",
-//     label: "Flood",
-//     icon: "🌊",
-//   },
-//   {
-//     id: "streams",
-//     label: "Streams",
-//     icon: "〰️",
-//   },
-//   {
-//     id: "drought",
-//     label: "Drought",
-//     icon: "🏜️",
-//   },
-//   {
-//     id: "weather",
-//     label: "Weather",
-//     icon: "🌧️",
-//   },
-//   {
-//     id: "railroad",
-//     label: "Railroad",
-//     icon: "🚂",
-//   },
-// ];
-
-// export default function BottomNavigation() {
-//   const { activeLayer, setActiveLayer } = useMap();
-
-//   return (
-//     <View style={styles.container}>
-//       {ITEMS.map((item) => {
-//         const active = activeLayer === item.id;
-
-//         return (
-//           <Pressable
-//             key={item.id}
-//             style={styles.item}
-//             onPress={() => setActiveLayer(item.id)}
-//           >
-//             <Text style={styles.icon}>{item.icon}</Text>
-
-//             <Text style={[styles.label, active && styles.activeLabel]}>
-//               {item.label}
-//             </Text>
-//           </Pressable>
-//         );
-//       })}
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     position: "absolute",
-//     bottom: 20,
-//     left: 20,
-//     right: 20,
-//     flexDirection: "row",
-//     backgroundColor: "white",
-//     borderRadius: 14,
-//     paddingVertical: 8,
-//     elevation: 8,
-//   },
-
-//   item: {
-//     flex: 1,
-//     alignItems: "center",
-//     paddingVertical: 8,
-//   },
-
-//   icon: {
-//     fontSize: 18,
-//     marginBottom: 3,
-//   },
-
-//   label: {
-//     fontSize: 12,
-//     color: "#777",
-//   },
-
-//   activeLabel: {
-//     color: "#007AFF",
-//     fontWeight: "700",
-//   },
-// });

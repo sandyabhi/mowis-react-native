@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import MowisMap from "@/components/map/MowisMap";
 
+import DroughtCalendar from "@/components/drought/DroughtCalendar";
 import BottomNavigation from "@/components/map/controls/BottomNavigation";
 import CumulativeWeatherControls from "@/components/map/controls/CummulativeWeatherControls";
 import CurrentWeatherControls from "@/components/map/controls/CurrentWeatherControls";
@@ -37,6 +38,13 @@ export default function MapScreen() {
     activeLayer,
     weatherFrame,
     weatherType,
+
+    droughtImageNumber,
+    setDroughtImageNumber,
+    selectedDroughtDate,
+    setSelectedDroughtDate,
+    showDroughtCalendar,
+    setShowDroughtCalendar,
 
     floodType,
     setFloodGeoJSON,
@@ -211,6 +219,8 @@ export default function MapScreen() {
   //   return () => clearInterval(interval);
   // }, [showWeather, setWeatherFrame]);
 
+  console.log(activeLayer, "-", showDroughtCalendar);
+
   function handleSensorPress(event) {
     const features = event?.nativeEvent?.features;
 
@@ -242,6 +252,18 @@ export default function MapScreen() {
 
       {activeLayer === "weather" && weatherType === "Cumulative" && (
         <CumulativeWeatherControls />
+      )}
+
+      {activeLayer === "drought" && showDroughtCalendar && (
+        <DroughtCalendar
+          visible={showDroughtCalendar}
+          selectedDate={selectedDroughtDate}
+          onSelectDate={(date, imageNumber) => {
+            setSelectedDroughtDate(date);
+            setDroughtImageNumber(imageNumber);
+          }}
+          onClose={() => setShowDroughtCalendar(false)}
+        />
       )}
 
       {/* <TopRightControls /> */}
@@ -284,20 +306,14 @@ const styles = StyleSheet.create({
 
   loading: {
     position: "absolute",
-
     top: 55,
     left: 12,
-
     flexDirection: "row",
     alignItems: "center",
-
     backgroundColor: "white",
-
     paddingHorizontal: 12,
     paddingVertical: 10,
-
     borderRadius: 8,
-
     elevation: 4,
   },
 
@@ -307,15 +323,11 @@ const styles = StyleSheet.create({
 
   error: {
     position: "absolute",
-
     bottom: 90,
     left: 12,
     right: 12,
-
     backgroundColor: "#ffeeee",
-
     padding: 12,
-
     borderRadius: 8,
   },
 });

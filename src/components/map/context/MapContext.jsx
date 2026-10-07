@@ -54,6 +54,8 @@ export function MapProvider({ children }) {
 
   const [showDrought, setShowDrought] = useState(false);
   const [droughtImageNumber, setDroughtImageNumber] = useState(1);
+  const [selectedDroughtDate, setSelectedDroughtDate] = useState(null);
+  const [showDroughtCalendar, setShowDroughtCalendar] = useState(true);
 
   const [floodType, setFloodType] = useState("current-flood");
   const [floodGeoJSON, setFloodGeoJSON] = useState(null);
@@ -87,6 +89,10 @@ export function MapProvider({ children }) {
         setShowDrought,
         droughtImageNumber,
         setDroughtImageNumber,
+        selectedDroughtDate,
+        setSelectedDroughtDate,
+        showDroughtCalendar,
+        setShowDroughtCalendar,
 
         floodType,
         setFloodType,
