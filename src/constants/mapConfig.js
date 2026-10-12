@@ -2,7 +2,7 @@ export const MOWIS_BASE_URL =
     "https://mowaterinfo.itrss.mst.edu";
 
 export const STREAMFLOW_URL =
-    `${MOWIS_BASE_URL}/data/streamflow.json`;
+    `${MOWIS_BASE_URL}/data/ALLsensor_sites.json`;
 
 export const DROUGHT_BASE_URL =
     `${MOWIS_BASE_URL}/assets/USDM_current_M`;

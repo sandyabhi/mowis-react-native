@@ -1,13 +1,13 @@
 import * as MapLibreGL from "@maplibre/maplibre-react-native";
 
+import { useMap } from "./context/MapContext";
 import BaseMapLayer from "./layers/BaseMapLayer";
 import DroughtLayer from "./layers/DroughtLayer";
 import FloodLayer from "./layers/FloodLayer";
 import RailRoadLayer from "./layers/RailRoadLayer";
+import SensorGeoJSONLayers from "./layers/SensorGeoJSONLayers";
 import StreamflowLayer from "./layers/StreamflowLayer";
 import WeatherLayer from "./layers/WeatherLayer";
-
-import { useMap } from "./context/MapContext";
 
 import { INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM } from "@/constants/mapConfig";
 
@@ -16,6 +16,8 @@ export default function MowisMap({
   onSensorPress,
   onFloodPress,
   onRailroadPress,
+  sensorBasin,
+  sensorFlowlines,
 }) {
   const {
     showSensors,
@@ -81,6 +83,9 @@ export default function MowisMap({
         geoJSON={floodGeoJSON}
         onFloodPress={onFloodPress}
       />
+
+      {/* <SensorGeoJSONLayers basin={sensorBasin} flowlines={sensorFlowlines} /> */}
+      <SensorGeoJSONLayers basin={sensorBasin} flowlines={sensorFlowlines} />
 
       {activeLayer === "streams" && (
         <StreamflowLayer

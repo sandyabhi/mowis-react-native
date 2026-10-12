@@ -5,6 +5,14 @@ export default function StreamflowLayer({ geoJSON, onSensorPress }) {
     return null;
   }
 
+  console.log("Streamflow feature count:", geoJSON.features?.length);
+
+  console.log(
+    "First streamflow feature:",
+    JSON.stringify(geoJSON.features?.[0], null, 2),
+  );
+  console.log("-=-=----------------------==-=-==--=-=-=-=-=-=-=-=-=-");
+
   return (
     <MapLibreGL.GeoJSONSource
       id="streamflow-source"

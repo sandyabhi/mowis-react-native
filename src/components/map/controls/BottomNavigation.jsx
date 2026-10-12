@@ -4,9 +4,9 @@ import { useMap } from "../context/MapContext";
 
 const ITEMS = [
   {
-    id: "flood",
-    label: "Flood",
-    icon: "https://mowaterinfo.itrss.mst.edu/assets/MEI/MEI/img/flood-lvl.png",
+    id: "weather",
+    label: "Weather",
+    icon: "https://mowaterinfo.itrss.mst.edu/assets/MEI/MEI/img/cloud.jpg",
   },
   {
     id: "streams",
@@ -19,9 +19,9 @@ const ITEMS = [
     icon: "https://mowaterinfo.itrss.mst.edu/assets/MEI/MEI/img/drought2.0.png",
   },
   {
-    id: "weather",
-    label: "Weather",
-    icon: "https://mowaterinfo.itrss.mst.edu/assets/MEI/MEI/img/cloud.jpg",
+    id: "flood",
+    label: "Flood",
+    icon: "https://mowaterinfo.itrss.mst.edu/assets/MEI/MEI/img/flood-lvl.png",
   },
   {
     id: "railroad",
@@ -102,5 +102,5 @@ const styles = StyleSheet.create({
     borderColor: "#007AFF",
   },
 
-  activeIcon: { transform: [{ scale: 1.1 }] },
+  activeIcon: { transform: [{ scale: 1.2 }] },
 });
