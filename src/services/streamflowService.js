@@ -11,3 +11,21 @@ export async function fetchStreamflowData() {
 
     return response.json();
 }
+
+
+export async function fetchSensorData(url) {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Confirm the actual structure of each JSON file.
+    if (!data || typeof data !== "object") {
+        throw new Error("Invalid sensor data format");
+    }
+
+    return data;
+}

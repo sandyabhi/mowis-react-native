@@ -1,4 +1,3 @@
-
 const NLDI_BASE =
     "https://api.water.usgs.gov/nldi/linked-data/nwissite";
 

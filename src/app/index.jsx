@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -15,6 +15,7 @@ import BottomNavigation from "@/components/map/controls/BottomNavigation";
 import CumulativeWeatherControls from "@/components/map/controls/CummulativeWeatherControls";
 import CurrentWeatherControls from "@/components/map/controls/CurrentWeatherControls";
 import DailyWeatherControls from "@/components/map/controls/DailyWeatherControls";
+import SensorSearchBar from "@/components/map/controls/SensorSearchBar";
 import TopLeftControls from "@/components/map/controls/TopLeftControls";
 import FloodDetailsModal from "@/components/map/modals/FloodDetailsModal";
 import SensorDetailsModal from "@/components/map/modals/SensorsDetailsModal";
@@ -38,6 +39,7 @@ export default function MapScreen() {
   const [selectedSensor, setSelectedSensor] = useState(null);
   const [showSensorInfo, setShowSensorInfo] = useState(false);
   const [sensorDataById, setSensorDataById] = useState({});
+  const [sensorSearchQuery, setSensorSearchQuery] = useState("");
 
   const [loadingSensors, setLoadingSensors] = useState(true);
   const [sensorError, setSensorError] = useState(null);
@@ -376,6 +378,37 @@ export default function MapScreen() {
   //   };
   // }, [selectedSensor?.sensorId]);
 
+  const filteredSensorGeoJSON = useMemo(() => {
+    if (!sensorGeoJSON) return null;
+
+    const query = sensorSearchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return {
+        ...sensorGeoJSON,
+        features: [],
+      };
+    }
+
+    return {
+      ...sensorGeoJSON,
+      features: sensorGeoJSON.features.filter((feature) => {
+        const properties = feature.properties ?? {};
+
+        const name = String(
+          properties.siteName ?? properties.site_name ?? "",
+        ).toLowerCase();
+
+        const id = String(properties.sensorId ?? "").toLowerCase();
+
+        return name.includes(query) || id.includes(query);
+      }),
+    };
+  }, [sensorGeoJSON, sensorSearchQuery]);
+
+  // const [centerOnSensor, setCenterOnSensor] = useState(null);
+  const [centerOnSensor, setCenterOnSensor] = useState(null);
+
   return (
     <View style={styles.container}>
       {/* <MowisMap
@@ -393,14 +426,63 @@ export default function MapScreen() {
         sensorBasin={sensorBasin}
         sensorFlowlines={sensorFlowlines}
       /> */}
+      {/* 
+      {activeLayer === "streams" && (
+        <SensorSearchBar
+          onSearch={(query) => {
+            console.log("Search sensors:", query);
+          }}
+        />
+      )} */}
 
+      {/* {activeLayer === "streams" && (
+        <SensorSearchBar onSearch={setSensorSearchQuery} />
+      )} */}
+      {/* 
+      {activeLayer === "streams" && (
+        <SensorSearchBar
+          sensors={sensorGeoJSON?.features ?? []}
+          onSearch={setSensorSearchQuery}
+          onSelect={(feature) => {
+            handleSensorPress({ features: [feature] });
+          }}
+        />
+      )} */}
+
+      {activeLayer === "streams" && (
+        <SensorSearchBar
+          sensors={sensorGeoJSON?.features ?? []}
+          onSearch={setSensorSearchQuery}
+          onSelect={(feature) => {
+            centerOnSensor?.(feature);
+            handleSensorPress({ features: [feature] });
+          }}
+        />
+      )}
+
+      {/* 
       <MowisMap
-        sensorGeoJSON={sensorGeoJSON}
+        sensorGeoJSON={
+          activeLayer === "streams" ? filteredSensorGeoJSON : sensorGeoJSON
+        }
         onSensorPress={handleSensorPress}
         onFloodPress={handleFloodPress}
         onRailroadPress={handleRailroadPress}
         sensorBasin={sensorBasin}
         sensorFlowlines={sensorFlowlines}
+      /> 
+      */}
+
+      <MowisMap
+        sensorGeoJSON={
+          activeLayer === "streams" ? filteredSensorGeoJSON : sensorGeoJSON
+        }
+        onSensorPress={handleSensorPress}
+        onFloodPress={handleFloodPress}
+        onRailroadPress={handleRailroadPress}
+        sensorBasin={sensorBasin}
+        sensorFlowlines={sensorFlowlines}
+        onCenterOnSensorReady={(fn) => setCenterOnSensor(() => fn)}
       />
 
       {/* {selectedSensor && (
@@ -420,7 +502,7 @@ export default function MapScreen() {
           onPress={() => setShowSensorInfo((visible) => !visible)}
         >
           <Text style={styles.sensorToggleText}>
-            {showSensorInfo ? "Hide Sensor Info ▲" : "Show Sensor Info ▼"}
+            {showSensorInfo ? "-" : "+"}
           </Text>
         </Pressable>
       )}
@@ -441,7 +523,11 @@ export default function MapScreen() {
         sensorBasin={sensorBasin}
         sensorFlowlines={sensorFlowlines}
       /> */}
-      <TopLeftControls />
+      {/* <TopLeftControls /> */}
+
+      {(activeLayer === "weather" ||
+        activeLayer === "flood" ||
+        activeLayer === "railroad") && <TopLeftControls />}
 
       {activeLayer === "weather" && weatherType === "Current" && (
         <CurrentWeatherControls />
@@ -560,19 +646,21 @@ const styles = StyleSheet.create({
 
   sensorToggleButton: {
     position: "absolute",
-    bottom: 44,
-    alignSelf: "center",
-    backgroundColor: "#13118A",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
+    bottom: 90,
+    right: 20,
+    width: 60,
+    height: 60,
+    backgroundColor: "#08067d",
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 15,
     zIndex: 20,
   },
 
   sensorToggleText: {
     color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 30,
+    fontWeight: "400",
   },
 });
