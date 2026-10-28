@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
     top: 55,
     width: "100%",
     paddingHorizontal: 12,
+    paddingLeft: 64,
     flex: 1,
     zIndex: 90,
     elevation: 8,

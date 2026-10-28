@@ -7,6 +7,7 @@ export function MapProvider({ children }) {
   const [activeLayer, setActiveLayer] = useState("weather");
 
   const [showSensors, setShowSensors] = useState(false);
+  const [selectedNetworks, setSelectedNetworks] = useState(["streamflow"]);
 
   const [showWeather, setShowWeather] = useState(true);
   const [weatherType, setWeatherType] = useState("Current");
@@ -75,6 +76,8 @@ export function MapProvider({ children }) {
 
         showSensors,
         setShowSensors,
+        selectedNetworks,
+        setSelectedNetworks,
 
         showWeather,
         setShowWeather,
