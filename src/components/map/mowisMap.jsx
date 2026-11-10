@@ -13,7 +13,7 @@ import StreamflowLayer from "./layers/StreamflowLayer";
 import WeatherLayer from "./layers/WeatherLayer";
 
 import { INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM } from "@/constants/mapConfig";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function MowisMap({
   sensorGeoJSON,
@@ -51,8 +51,9 @@ export default function MowisMap({
     zoomLevel: INITIAL_MAP_ZOOM,
   });
 
+  const mapRef = useRef(null);
+
   const centerOnSensor = useCallback((feature) => {
-    console.log("========== SENSOR SELECTED ==========");
     console.log("Full feature:", JSON.stringify(feature, null, 2));
 
     const coordinates = feature?.geometry?.coordinates;
@@ -109,6 +110,40 @@ export default function MowisMap({
   console.log("=====================");
   console.log("=====================");
 
+  const handleMapPress = async (event) => {
+    console.log("Event:", event);
+
+    if (activeLayer !== "flood") {
+      return;
+    }
+
+    try {
+      console.log("Querying flood layer...");
+
+      const features = await mapRef.current?.queryRenderedFeatures(
+        event?.point,
+        {
+          layers: ["flood-fill-layer"],
+        },
+      );
+
+      console.log("Queried features:", features);
+
+      if (!features || features.length === 0) {
+        console.log("No flood polygon pressed");
+        return;
+      }
+
+      const floodFeature = features[0];
+
+      console.log("Flood feature:", floodFeature);
+      console.log("Properties:", floodFeature.properties);
+
+      onFloodPress?.(floodFeature);
+    } catch (error) {
+      console.error("Error querying flood feature:", error);
+    }
+  };
   return (
     // <MapLibreGL.Map
     //   ref={cameraRef}
@@ -123,9 +158,12 @@ export default function MowisMap({
     //     zoomLevel={cameraTarget.zoomLevel}
     //     animationDuration={800}
     //   />
+
     <MapLibreGL.Map
+      ref={mapRef}
       style={{ flex: 1 }}
       mapStyle="https://demotiles.maplibre.org/style.json"
+      onPress={handleMapPress}
     >
       {/* <MapLibreGL.Camera
         initialViewState={{
@@ -180,11 +218,7 @@ export default function MowisMap({
         onMarkerPress={onRailroadPress}
       />
 
-      <FloodLayer
-        visible={activeLayer === "flood"}
-        geoJSON={floodGeoJSON}
-        onFloodPress={onFloodPress}
-      />
+      <FloodLayer visible={activeLayer === "flood"} geoJSON={floodGeoJSON} />
 
       {/* <SensorGeoJSONLayers basin={sensorBasin} flowlines={sensorFlowlines} /> */}
       <SensorGeoJSONLayers basin={sensorBasin} flowlines={sensorFlowlines} />

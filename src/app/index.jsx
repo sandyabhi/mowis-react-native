@@ -182,7 +182,18 @@ export default function MapScreen() {
     };
   }, [activeLayer, floodType, setFloodGeoJSON, setFloodLoading, setFloodError]);
 
-  function handleFloodPress(event) {
+  const handleFloodPress = (feature) => {
+    console.log("Feature:", feature);
+    console.log("Properties:", feature?.properties);
+
+    if (!feature) {
+      return;
+    }
+
+    setSelectedFlood(feature);
+  };
+
+  function handleFloodPress2(event) {
     console.log("FLOOD LAYER PRESSED:", event);
 
     const features = event?.nativeEvent?.features;
