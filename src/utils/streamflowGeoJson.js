@@ -6,6 +6,7 @@ function getLastValue(array) {
     return array[array.length - 1];
 }
 
+
 export function streamflowToGeoJSON(data) {
     const features = [];
 
@@ -60,6 +61,8 @@ export function streamflowToGeoJSON(data) {
                     siteName:
                         sensor.site_name ||
                         `Sensor ${sensorId}`,
+
+                    Icon: sensor.Icon ?? sensor.icon ?? null,
 
                     latitude,
                     longitude,

@@ -4,7 +4,10 @@ import { useMap } from "./context/MapContext";
 import BaseMapLayer from "./layers/BaseMapLayer";
 import DroughtLayer from "./layers/DroughtLayer";
 import FloodLayer from "./layers/FloodLayer";
+import MissouriBoundaryLayer from "./layers/MissouriBoundaryLayer";
+import OutsideSquareMaskLayer from "./layers/OutsideSquareMaskLayer";
 import RailRoadLayer from "./layers/RailRoadLayer";
+import RiverNetworkLayer from "./layers/RiverNetworkLayer";
 import SensorGeoJSONLayers from "./layers/SensorGeoJSONLayers";
 import StreamflowLayer from "./layers/StreamflowLayer";
 import WeatherLayer from "./layers/WeatherLayer";
@@ -14,6 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 
 export default function MowisMap({
   sensorGeoJSON,
+  relatedSensorGeoJSON,
   onSensorPress,
   onFloodPress,
   onRailroadPress,
@@ -159,6 +163,12 @@ export default function MowisMap({
         frame={weatherFrame}
       />
 
+      <MissouriBoundaryLayer />
+
+      <RiverNetworkLayer />
+
+      <OutsideSquareMaskLayer />
+
       <DroughtLayer
         visible={activeLayer === "drought"}
         imageNumber={droughtImageNumber}
@@ -179,12 +189,38 @@ export default function MowisMap({
       {/* <SensorGeoJSONLayers basin={sensorBasin} flowlines={sensorFlowlines} /> */}
       <SensorGeoJSONLayers basin={sensorBasin} flowlines={sensorFlowlines} />
 
-      {activeLayer === "streams" && (
+      {/* {activeLayer === "streams" && (
         <StreamflowLayer
           geoJSON={sensorGeoJSON}
           onSensorPress={onSensorPress}
         />
       )}
+
+      {relatedSensorGeoJSON?.features?.length > 0 && (
+        <StreamflowLayer
+          geoJSON={relatedSensorGeoJSON}
+          onSensorPress={onSensorPress}
+        />
+      )} */}
+
+      {activeLayer === "streams" && (
+        <StreamflowLayer
+          geoJSON={sensorGeoJSON}
+          onSensorPress={onSensorPress}
+          idPrefix="streamflow"
+        />
+      )}
+
+      {activeLayer === "streams" &&
+        relatedSensorGeoJSON?.features?.length > 0 && (
+          <StreamflowLayer
+            geoJSON={relatedSensorGeoJSON}
+            onSensorPress={onSensorPress}
+            idPrefix="related-streamflow"
+            related
+          />
+        )}
+
       {/* 
       <WeatherLayer
         visible={showWeather}

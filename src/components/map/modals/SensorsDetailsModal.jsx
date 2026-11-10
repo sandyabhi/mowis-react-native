@@ -120,6 +120,28 @@ export default function SensorDetailsModal({ sensor, onClose }) {
             nestedScrollEnabled
           >
             {activeTab === "gauge" && (
+              // <SensorChart
+              //   title="Gauge Height"
+              //   values={gaugeData}
+              //   timestamps={gaugeTimestamps}
+              //   forecastValues={forecastGauge.height ?? []}
+              //   forecastTimestamps={forecastGauge.tsp ?? []}
+              //   yAxisLabel=" ft"
+              //   floodLevels={sensor.flood_levels}
+              //   chartWidth={chartWidth}
+              //   chartHeight={chartHeight}
+              // />
+
+              // <SensorChart
+              //   title="Gauge Height"
+              //   values={gaugeData}
+              //   timestamps={gaugeTimestamps}
+              //   forecastValues={forecastGauge.height ?? []}
+              //   forecastTimestamps={forecastGauge.tsp ?? []}
+              //   yAxisLabel=" ft"
+              //   chartWidth={chartWidth}
+              // />
+
               <SensorChart
                 title="Gauge Height"
                 values={gaugeData}
@@ -127,9 +149,7 @@ export default function SensorDetailsModal({ sensor, onClose }) {
                 forecastValues={forecastGauge.height ?? []}
                 forecastTimestamps={forecastGauge.tsp ?? []}
                 yAxisLabel=" ft"
-                floodLevels={sensor.flood_levels}
                 chartWidth={chartWidth}
-                chartHeight={chartHeight}
               />
             )}
 

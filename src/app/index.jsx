@@ -19,6 +19,7 @@ import SensorSearchBar from "@/components/map/controls/SensorSearchBar";
 import TopLeftControls from "@/components/map/controls/TopLeftControls";
 import FloodDetailsModal from "@/components/map/modals/FloodDetailsModal";
 import SensorDetailsModal from "@/components/map/modals/SensorsDetailsModal";
+
 import {
   fetchRelatedSensorData,
   getRelatedSensors,
@@ -387,10 +388,29 @@ export default function MapScreen() {
         const combinedFeatures = [];
 
         for (const { networkId, data } of datasets) {
-          const geoJSON = streamflowToGeoJSON(data);
+          const dataWithIcons = Object.fromEntries(
+            Object.entries(data).map(([id, sensor]) => {
+              const allSiteRecord = allSitesMap[id];
+
+              return [
+                id,
+                {
+                  ...sensor,
+                  Icon:
+                    sensor.Icon ??
+                    sensor.icon ??
+                    allSiteRecord?.Icon ??
+                    allSiteRecord?.icon ??
+                    null,
+                },
+              ];
+            }),
+          );
+
+          const geoJSON = streamflowToGeoJSON(dataWithIcons);
 
           combinedFeatures.push(...geoJSON.features);
-          Object.assign(combinedData, data);
+          Object.assign(combinedData, dataWithIcons);
         }
 
         if (cancelled) return;
@@ -437,38 +457,107 @@ export default function MapScreen() {
                 sensorId,
                 allSitesMap,
                 relatedSensorsMap,
+                sensorDataById,
               );
 
-              const sensorId = String(feature.properties?.sensorId ?? "");
-
-              console.log("Selected sensor ID:", sensorId);
-              console.log("ALL sites loaded:", Object.keys(allSitesMap).length);
-              console.log(
-                "Relationship map loaded:",
-                Object.keys(relatedSensorsMap).length,
+              const relatedGeoJSON = relatedSensorsToGeoJSON(
+                related,
+                sensorId,
+                allSitesMap,
               );
 
-              console.log("Related sensor count:", Object.keys(related).length);
-              console.log(
-                "Related sensor sample:",
-                Object.entries(related).slice(0, 3),
-              );
-
-              setRelatedSensors(related);
               setSearchedSensorId(sensorId);
-              setRelatedSensorGeoJSON(
-                relatedSensorsToGeoJSON(related, sensorId),
-              );
+              setRelatedSensorGeoJSON(relatedGeoJSON);
 
-              console.log(
-                `Related sensors for ${sensorId}:`,
-                Object.keys(related),
-              );
+              console.log("Selected sensor with related sensors:", {
+                sensorId,
+                relatedSensors: related,
+              });
             }
 
             centerOnSensor?.(feature);
+
             handleSensorPress({ features: [feature] });
           }}
+
+          // onSelect={(feature) => {
+          //   const sensorId = String(feature.properties?.sensorId ?? "");
+
+          //   if (sensorId && Object.keys(allSitesMap).length > 0) {
+          //     // const related = getRelatedSensors(
+          //     //   sensorId,
+          //     //   allSitesMap,
+          //     //   relatedSensorsMap,
+          //     // );
+
+          //     // console.log("||||||||||||||||||||||||");
+          //     // console.log("Selected sensor ID:", sensorId);
+          //     // console.log("ALL sites loaded:", Object.keys(allSitesMap).length);
+          //     // console.log(
+          //     //   "Relationship map loaded:",
+          //     //   Object.keys(relatedSensorsMap).length,
+          //     // );
+          //     // console.log("Related sensor count:", Object.keys(related).length);
+          //     // console.log("Related sensor IDs:", Object.keys(related));
+          //     // console.log(
+          //     //   "Related sensor sample:",
+          //     //   Object.entries(related).slice(0, 3),
+          //     // );
+          //     // console.log("||||||||||||||||||||||||");
+
+          //     // setRelatedSensors(related);
+          //     // setSearchedSensorId(sensorId);
+          //     // setRelatedSensorGeoJSON(
+          //     //   relatedSensorsToGeoJSON(related, sensorId),
+          //     // );
+
+          //     const related = getRelatedSensors(
+          //       sensorId,
+          //       allSitesMap,
+          //       relatedSensorsMap,
+          //       sensorDataById,
+          //     );
+
+          //     console.log("Related sensors with time-series data:", related);
+
+          //     console.log(
+          //       "Sensors with time-series data:",
+          //       Object.values(related).filter((sensor) => sensor.hasTimeSeries)
+          //         .length,
+          //     );
+
+          //     console.log(
+          //       "Sensors missing time-series data:",
+          //       Object.values(related)
+          //         .filter((sensor) => !sensor.hasTimeSeries)
+          //         .map((sensor) => sensor.sensorId),
+          //     );
+
+          //     // setRelatedSensors(related);
+          //     // setSearchedSensorId(sensorId);
+
+          //     // setRelatedSensorGeoJSON(
+          //     //   relatedSensorsToGeoJSON(related, sensorId),
+          //     // );
+
+          //     setRelatedSensors(related);
+          //     setSearchedSensorId(sensorId);
+
+          //     const relatedGeoJSON = relatedSensorsToGeoJSON(related, sensorId);
+
+          //     console.log(
+          //       "RELATED SENSOR GEOJSON:",
+          //       JSON.stringify(relatedGeoJSON, null, 2),
+          //     );
+
+          //     setRelatedSensorGeoJSON(
+          //       relatedSensorsToGeoJSON(related, sensorId, allSitesMap),
+          //     );
+          //   }
+
+          //   centerOnSensor?.(feature);
+          //   handleSensorPress({ features: [feature] });
+          // }}
         />
       )}
 
