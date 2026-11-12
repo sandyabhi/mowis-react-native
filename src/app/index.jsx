@@ -149,19 +149,48 @@ export default function MapScreen() {
     };
   }, [activeLayer, floodType, setFloodGeoJSON, setFloodLoading, setFloodError]);
 
-  function handleFloodPress(event) {
-    console.log("FLOOD LAYER PRESSED:", event);
+  // function handleFloodPress(event) {
+  //   console.log("FLOOD LAYER PRESSED:", event);
 
-    const features = event?.nativeEvent?.features;
+  //   const features = event?.nativeEvent?.features;
 
-    if (!features?.length) {
-      console.log("No flood feature");
+  //   if (!features?.length) {
+  //     console.log("No flood feature");
+  //     return;
+  //   }
+
+  //   console.log("Selected flood:", features[0]);
+
+  //   setSelectedFlood(features[0]);
+  // }
+
+  // function handleFloodPress(feature) {
+  //   console.log("FLOOD LAYER PRESSED:", feature);
+
+  //   if (!feature) {
+  //     console.log("No flood feature");
+  //     return;
+  //   }
+
+  //   console.log("Selected flood:", feature);
+
+  //   setSelectedFlood(feature);
+  // }
+
+  function handleFloodPress(feature) {
+    console.log("FLOOD LAYER PRESSED:", feature);
+
+    if (!feature) {
+      console.log("No flood polygon pressed");
       return;
     }
 
-    console.log("Selected flood:", features[0]);
+    if (feature.type !== "Feature") {
+      console.log("Pressed item is not a flood feature");
+      return;
+    }
 
-    setSelectedFlood(features[0]);
+    setSelectedFlood(feature);
   }
 
   useEffect(() => {

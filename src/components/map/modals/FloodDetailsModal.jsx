@@ -3,12 +3,20 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 function formatToChicagoTime(dateString) {
   if (!dateString) return "N/A";
 
-  const safeString = String(dateString).replace(" UTC", "Z").replace(" ", "T");
+  let safeString = String(dateString).trim();
+
+  safeString = safeString.replace(" UTC", "");
+
+  safeString = safeString.replace(" ", "T");
+
+  if (!safeString.endsWith("Z")) {
+    safeString += "Z";
+  }
 
   const date = new Date(safeString);
 
   if (Number.isNaN(date.getTime())) {
-    return dateString;
+    return String(dateString);
   }
 
   return date.toLocaleString("en-US", {
@@ -18,6 +26,7 @@ function formatToChicagoTime(dateString) {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZoneName: "short",
   });
 }
 
@@ -75,10 +84,6 @@ export default function FloodDetailsModal({ flood, onClose }) {
               {formatToChicagoTime(properties.update_time)}
             </Text>
           </View>
-
-          <Pressable style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </Pressable>
         </View>
       </View>
     </Modal>
@@ -97,7 +102,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     padding: 20,
-    paddingBottom: 30,
+    paddingBottom: 50,
   },
 
   header: {

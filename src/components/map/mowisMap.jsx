@@ -113,39 +113,49 @@ export default function MowisMap({
   console.log("=====================");
 
   const handleMapPress = async (event) => {
-    console.log("Event:", event);
-
     if (activeLayer !== "flood") {
       return;
     }
 
     try {
-      console.log("Querying flood layer...");
+      console.log("========== MAP PRESSED ==========");
+      console.log("Event:", event);
 
-      const features = await mapRef.current?.queryRenderedFeatures(
-        event?.point,
-        {
-          layers: ["flood-fill-layer"],
-        },
-      );
+      const point = event?.point || event?.nativeEvent?.point;
 
-      console.log("Queried features:", features);
+      if (!point) {
+        console.log("No press point found");
+        return;
+      }
 
-      if (!features || features.length === 0) {
+      console.log("Press point:", point);
+
+      const features = await mapRef.current?.queryRenderedFeatures(point, {
+        layers: ["flood-fill-layer"],
+      });
+
+      console.log("Queried flood features:", features);
+
+      if (!Array.isArray(features) || features.length === 0) {
         console.log("No flood polygon pressed");
         return;
       }
 
       const floodFeature = features[0];
 
-      console.log("Flood feature:", floodFeature);
-      console.log("Properties:", floodFeature.properties);
+      if (floodFeature?.type !== "Feature" || !floodFeature?.properties) {
+        console.log("Invalid flood feature");
+        return;
+      }
+
+      console.log("Flood polygon pressed:", floodFeature);
 
       onFloodPress?.(floodFeature);
     } catch (error) {
       console.error("Error querying flood feature:", error);
     }
   };
+
   return (
     // <MapLibreGL.Map
     //   ref={cameraRef}
