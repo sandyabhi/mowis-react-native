@@ -1,3 +1,7 @@
+import {
+  fetchRailroadData,
+  fetchRailroadNetwork,
+} from "@/services/railroadService";
 import { fetchLatestWeatherTime } from "@/services/weatherService";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -67,6 +71,44 @@ export function MapProvider({ children }) {
   const [railroadNetworkGeoJSON, setRailroadNetworkGeoJSON] = useState(null);
   const [railroadLoading, setRailroadLoading] = useState(false);
   const [railroadError, setRailroadError] = useState(null);
+  const [showWaterwayCrossings, setShowWaterwayCrossings] = useState(false);
+  const [showRailroads, setShowRailroads] = useState(false);
+
+  useEffect(() => {
+    if (activeLayer !== "railroad") return;
+
+    async function loadRailroadData() {
+      try {
+        setRailroadLoading(true);
+        setRailroadError(null);
+
+        console.log("Loading railroad data...");
+
+        const [forecastData, networkData] = await Promise.all([
+          fetchRailroadData(),
+          fetchRailroadNetwork(),
+        ]);
+
+        // console.log("Railroad forecast loaded:", forecastData);
+        // console.log("Railroad network loaded:", networkData);
+
+        console.log(
+          "Railroad network features:",
+          networkData?.features?.length,
+        );
+
+        setRailroadData(forecastData);
+        setRailroadNetworkGeoJSON(networkData);
+      } catch (error) {
+        console.error("Failed to load railroad data:", error);
+        setRailroadError(error.message);
+      } finally {
+        setRailroadLoading(false);
+      }
+    }
+
+    loadRailroadData();
+  }, [activeLayer]);
 
   return (
     <MapContext.Provider
@@ -114,6 +156,10 @@ export function MapProvider({ children }) {
         setRailroadLoading,
         railroadError,
         setRailroadError,
+        showWaterwayCrossings,
+        setShowWaterwayCrossings,
+        showRailroads,
+        setShowRailroads,
       }}
     >
       {children}

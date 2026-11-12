@@ -34,11 +34,13 @@ export default function MowisMap({
     weatherType,
 
     droughtImageNumber,
-
     floodGeoJSON,
 
     railroadData,
     railroadNetworkGeoJSON,
+
+    showWaterwayCrossings,
+    showRailroads,
 
     activeLayer,
   } = useMap();
@@ -214,7 +216,10 @@ export default function MowisMap({
 
       <RailRoadLayer
         visible={activeLayer === "railroad"}
+        showWaterwayCrossings={showWaterwayCrossings}
+        showRailroads={showRailroads}
         railroadData={railroadData}
+        railroadNetworkGeoJSON={railroadNetworkGeoJSON}
         onMarkerPress={onRailroadPress}
       />
 

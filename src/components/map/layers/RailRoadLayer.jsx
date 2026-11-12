@@ -2,121 +2,125 @@ import * as MapLibreGL from "@maplibre/maplibre-react-native";
 
 export default function RailRoadLayer({
   visible,
-  //   networkGeoJSON,
+  showWaterwayCrossings,
+  showRailroads,
   railroadData,
+  railroadNetworkGeoJSON,
   onMarkerPress,
 }) {
-  if (!visible) return null;
+  if (!visible) {
+    return null;
+  }
 
-  //   if (networkGeoJSON?.features) {
-  //     networkGeoJSON.features.forEach((feature, index) => {
-  //       const geometry = feature.geometry;
+  /*
+   * Convert railroad forecast records into GeoJSON point features.
+   */
+  const crossingsGeoJSON = {
+    type: "FeatureCollection",
 
-  //       if (!geometry) return;
+    features: Object.entries(railroadData ?? {})
+      .map(([id, railroad]) => {
+        const longitude = Number(railroad?.longitude);
+        const latitude = Number(railroad?.latitude);
 
-  //       if (geometry.type === "LineString") {
-  //         if (!geometry.coordinates || geometry.coordinates.length < 2) {
-  //           console.log(
-  //             "BAD RAILROAD LINE:",
-  //             index,
-  //             feature.properties,
-  //             geometry.coordinates,
-  //           );
-  //         }
-  //       }
+        if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) {
+          return null;
+        }
 
-  //       if (geometry.type === "MultiLineString") {
-  //         geometry.coordinates.forEach((line, lineIndex) => {
-  //           if (!line || line.length < 2) {
-  //             console.log(
-  //               "BAD RAILROAD MULTILINE:",
-  //               index,
-  //               lineIndex,
-  //               feature.properties,
-  //               line,
-  //             );
-  //           }
-  //         });
-  //       }
-  //     });
-  //   }
+        return {
+          type: "Feature",
+
+          properties: {
+            id: String(id),
+            sensorId: String(id),
+            siteName: railroad?.site_name ?? "",
+            reachId: railroad?.reach_id ?? "",
+          },
+
+          geometry: {
+            type: "Point",
+
+            coordinates: [longitude, latitude],
+          },
+        };
+      })
+      .filter(Boolean),
+  };
+
+  console.log("Waterway crossing markers:", crossingsGeoJSON.features.length);
+
+  const handlePress = (event) => {
+    const feature = event?.features?.[0] ?? event?.nativeEvent?.features?.[0];
+
+    if (!feature) {
+      console.log("No railroad feature pressed");
+      return;
+    }
+
+    console.log("Railroad feature pressed:", feature);
+
+    const properties = feature.properties ?? {};
+
+    const id =
+      properties.id ??
+      properties.sensorId ??
+      properties.reach_id ??
+      properties.reachId;
+
+    if (!id) {
+      console.log("No railroad ID found");
+      return;
+    }
+
+    const railroad = railroadData?.[String(id)] ?? railroadData?.[id];
+
+    if (!railroad) {
+      console.log("No railroad forecast found for:", id);
+      return;
+    }
+
+    console.log("Opening railroad modal:", railroad);
+
+    onMarkerPress?.(railroad);
+  };
 
   return (
     <>
-      {/* {networkGeoJSON && (
+      {showWaterwayCrossings && crossingsGeoJSON.features.length > 0 && (
+        <MapLibreGL.GeoJSONSource
+          id="railroad-crossings-source"
+          data={crossingsGeoJSON}
+          onPress={handlePress}
+        >
+          <MapLibreGL.Layer
+            id="railroad-crossings-layer"
+            type="circle"
+            paint={{
+              "circle-radius": 5,
+              "circle-color": "#898989",
+              "circle-stroke-width": 1,
+              "circle-stroke-color": "#5e5e5e",
+            }}
+          />
+        </MapLibreGL.GeoJSONSource>
+      )}
+
+      {showRailroads && railroadNetworkGeoJSON?.features?.length > 0 && (
         <MapLibreGL.GeoJSONSource
           id="railroad-network-source"
-          //   data={networkGeoJSON}
+          data={railroadNetworkGeoJSON}
         >
           <MapLibreGL.Layer
             id="railroad-network-layer"
             type="line"
             paint={{
-              "line-color": "#795548",
-              "line-opacity": 0.8,
               "line-width": 2,
+              "line-color": "#795548",
+              "line-opacity": 0.9,
             }}
           />
         </MapLibreGL.GeoJSONSource>
-      )} */}
-
-      {railroadData && (
-        <RailRoadMarkers data={railroadData} onMarkerPress={onMarkerPress} />
       )}
     </>
-  );
-}
-
-function RailRoadMarkers({ data, onMarkerPress }) {
-  const features = Object.entries(data)
-    .filter(([, location]) => {
-      return location?.latitude != null && location?.longitude != null;
-    })
-    .map(([sensorId, location]) => ({
-      type: "Feature",
-      properties: {
-        sensorId,
-        siteName: location.site_name,
-        reachId: location.reach_id,
-      },
-      geometry: {
-        type: "Point",
-        coordinates: [Number(location.longitude), Number(location.latitude)],
-      },
-    }));
-
-  console.log("Railroad marker count:", features.length);
-
-  console.log("First railroad marker:", features[0]);
-
-  const geoJSON = {
-    type: "FeatureCollection",
-    features,
-  };
-
-  return (
-    <MapLibreGL.GeoJSONSource
-      id="railroad-markers-source"
-      data={geoJSON}
-      onPress={onMarkerPress}
-      hitbox={{
-        top: 20,
-        right: 20,
-        bottom: 20,
-        left: 20,
-      }}
-    >
-      <MapLibreGL.Layer
-        id="railroad-markers-layer"
-        type="circle"
-        paint={{
-          "circle-radius": 10,
-          "circle-color": "#FF0000",
-          "circle-opacity": 1,
-          "circle-stroke-color": "#FFFFFF",
-          "circle-stroke-width": 2,
-        }}
-      />
-    </MapLibreGL.GeoJSONSource>
   );
 }

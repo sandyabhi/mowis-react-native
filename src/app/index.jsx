@@ -1,12 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import MowisMap from "@/components/map/MowisMap";
 
@@ -15,43 +9,23 @@ import BottomNavigation from "@/components/map/controls/BottomNavigation";
 import CumulativeWeatherControls from "@/components/map/controls/CummulativeWeatherControls";
 import CurrentWeatherControls from "@/components/map/controls/CurrentWeatherControls";
 import DailyWeatherControls from "@/components/map/controls/DailyWeatherControls";
-import SensorSearchBar from "@/components/map/controls/SensorSearchBar";
 import TopLeftControls from "@/components/map/controls/TopLeftControls";
 import FloodDetailsModal from "@/components/map/modals/FloodDetailsModal";
+import RailroadForecastModal from "@/components/map/modals/RailroadForecastModal";
 import SensorDetailsModal from "@/components/map/modals/SensorsDetailsModal";
 
-import {
-  fetchRelatedSensorData,
-  getRelatedSensors,
-} from "@/services/relatedSensorService";
-import { fetchSelectedNetworkData } from "@/services/streamflowService";
+import { fetchStreamflowData } from "@/services/streamflowService";
 
-import { relatedSensorsToGeoJSON } from "@/utils/relatedSensorsGeoJson";
 import { streamflowToGeoJSON } from "@/utils/streamflowGeoJson";
 
 import { useMap } from "@/components/map/context/MapContext";
 
 import { fetchFloodGeoJSON } from "@/services/floodService";
 import { fetchRailroadData } from "@/services/railroadService";
-import { fetchSensorGeoJSON } from "@/services/sensorGeoJsonService";
 
 export default function MapScreen() {
-  const [sensorBasin, setSensorBasin] = useState(null);
-  const [sensorFlowlines, setSensorFlowlines] = useState(null);
-  const [geoJSONLoading, setGeoJSONLoading] = useState(false);
-  const [geoJSONError, setGeoJSONError] = useState(null);
   const [sensorGeoJSON, setSensorGeoJSON] = useState(null);
   const [selectedSensor, setSelectedSensor] = useState(null);
-  const [showSensorInfo, setShowSensorInfo] = useState(false);
-  const [sensorDataById, setSensorDataById] = useState({});
-  const [sensorSearchQuery, setSensorSearchQuery] = useState("");
-  const [allSitesMap, setAllSitesMap] = useState({});
-  const [relatedSensorsMap, setRelatedSensorsMap] = useState({});
-  const [relatedSensors, setRelatedSensors] = useState({});
-  const [relatedSensorsError, setRelatedSensorsError] = useState(null);
-  const [relatedSensorGeoJSON, setRelatedSensorGeoJSON] = useState(null);
-  const [searchedSensorId, setSearchedSensorId] = useState(null);
-  const [allSensorsForSearch, setAllSensorsForSearch] = useState([]);
 
   const [loadingSensors, setLoadingSensors] = useState(true);
   const [sensorError, setSensorError] = useState(null);
@@ -70,8 +44,6 @@ export default function MapScreen() {
     setDroughtImageNumber,
     selectedDroughtDate,
     setSelectedDroughtDate,
-    showDroughtCalendar,
-    setShowDroughtCalendar,
 
     floodType,
     setFloodGeoJSON,
@@ -86,8 +58,6 @@ export default function MapScreen() {
     setRailroadLoading,
     railroadError,
     setRailroadError,
-
-    selectedNetworks,
   } = useMap();
 
   const [selectedRailroad, setSelectedRailroad] = useState(null);
@@ -134,14 +104,11 @@ export default function MapScreen() {
     setRailroadError,
   ]);
 
-  function handleRailroadPress(event) {
-    const features = event?.nativeEvent?.features;
+  function handleRailroadPress(railroad) {
+    console.log("========== RAILROAD SELECTED ==========");
+    console.log("Selected railroad:", railroad);
 
-    if (!features?.length) {
-      return;
-    }
-
-    setSelectedRailroad(features[0].properties);
+    setSelectedRailroad(railroad);
   }
 
   useEffect(() => {
@@ -182,18 +149,7 @@ export default function MapScreen() {
     };
   }, [activeLayer, floodType, setFloodGeoJSON, setFloodLoading, setFloodError]);
 
-  const handleFloodPress = (feature) => {
-    console.log("Feature:", feature);
-    console.log("Properties:", feature?.properties);
-
-    if (!feature) {
-      return;
-    }
-
-    setSelectedFlood(feature);
-  };
-
-  function handleFloodPress2(event) {
+  function handleFloodPress(event) {
     console.log("FLOOD LAYER PRESSED:", event);
 
     const features = event?.nativeEvent?.features;
@@ -208,236 +164,26 @@ export default function MapScreen() {
     setSelectedFlood(features[0]);
   }
 
-  console.log(activeLayer, "-", showDroughtCalendar);
-
-  const [sensorData, setSensorData] = useState(null);
-
-  function handleSensorPress(event) {
-    const feature = event?.features?.[0] ?? event?.nativeEvent?.features?.[0];
-
-    if (!feature) {
-      console.log("No sensor feature found:", event);
-      return;
-    }
-
-    const properties = feature.properties ?? {};
-    const sensorId = String(properties.sensorId ?? "");
-
-    if (!sensorId) {
-      console.log("Sensor ID missing:", properties);
-      return;
-    }
-
-    // Recover the original API record, including measurements and forecasts.
-    const rawSensor = sensorDataById?.[sensorId];
-
-    if (!rawSensor) {
-      console.error("Original sensor record not found:", sensorId);
-      console.log(
-        "Available sensor IDs:",
-        Object.keys(sensorDataById).slice(0, 10),
-      );
-      return;
-    }
-
-    const measurements = rawSensor.measurements ?? {};
-
-    const last = (values) =>
-      Array.isArray(values) && values.length > 0
-        ? values[values.length - 1]
-        : null;
-
-    setSelectedSensor({
-      ...rawSensor,
-      sensorId,
-      siteName:
-        rawSensor.site_name ?? properties.siteName ?? `Sensor ${sensorId}`,
-      measurements,
-      gaugeHeight: last(measurements.gh),
-      streamflow: last(measurements.sf),
-      timestamp: last(measurements.tsp),
-      floodCategory:
-        rawSensor.flood_levels?.category ?? properties.floodCategory ?? "None",
-      floodLevels: rawSensor.flood_levels ?? {},
-    });
-
-    setShowSensorInfo(true);
-  }
-
   useEffect(() => {
-    const sensorId = selectedSensor?.sensorId;
-
-    if (!sensorId) {
-      setSensorBasin(null);
-      setSensorFlowlines(null);
-      setGeoJSONError(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadSelectedSensorGeoJSON() {
-      setGeoJSONLoading(true);
-      setGeoJSONError(null);
-
-      try {
-        const result = await fetchSensorGeoJSON(sensorId);
-
-        if (cancelled) return;
-
-        setSensorBasin(result.basin);
-        setSensorFlowlines(result.flowlines);
-
-        console.log("Basin loaded:", result.basin?.type);
-        console.log("Flowlines loaded:", result.flowlines?.type);
-      } catch (error) {
-        if (!cancelled) {
-          setGeoJSONError(error.message);
-          console.error("Sensor GeoJSON error:", error);
-        }
-      } finally {
-        if (!cancelled) {
-          setGeoJSONLoading(false);
-        }
-      }
-    }
-
-    loadSelectedSensorGeoJSON();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedSensor?.sensorId]);
-
-  const filteredSensorGeoJSON = useMemo(() => {
-    if (!sensorGeoJSON) return null;
-
-    const query = sensorSearchQuery.trim().toLowerCase();
-
-    if (!query) {
-      return sensorGeoJSON;
-    }
-
-    return {
-      ...sensorGeoJSON,
-      features: sensorGeoJSON.features.filter((feature) => {
-        const properties = feature.properties ?? {};
-
-        const name = String(
-          properties.siteName ?? properties.site_name ?? "",
-        ).toLowerCase();
-
-        const id = String(properties.sensorId ?? "").toLowerCase();
-
-        return name.includes(query) || id.includes(query);
-      }),
-    };
-  }, [sensorGeoJSON, sensorSearchQuery]);
-
-  // const [centerOnSensor, setCenterOnSensor] = useState(null);
-  const [centerOnSensor, setCenterOnSensor] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadRelatedSensors() {
-      try {
-        const { allSitesMap, relatedSensorsMap } =
-          await fetchRelatedSensorData();
-
-        if (cancelled) return;
-
-        setAllSitesMap(allSitesMap);
-        setRelatedSensorsMap(relatedSensorsMap);
-
-        console.log(
-          "Loaded sensor site records:",
-          Object.keys(allSitesMap).length,
-        );
-
-        console.log(
-          "Loaded related sensor mappings:",
-          Object.keys(relatedSensorsMap).length,
-        );
-      } catch (error) {
-        if (!cancelled) {
-          console.error("Related sensor loading error:", error);
-          setRelatedSensorsError(error.message);
-        }
-      }
-    }
-
-    loadRelatedSensors();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (activeLayer !== "streams") {
-      return;
-    }
-
     let cancelled = false;
 
     async function loadSensors() {
       try {
         setLoadingSensors(true);
-        setSensorError(null);
 
-        const networksToLoad =
-          selectedNetworks.length === 0 ? ["streamflow"] : selectedNetworks;
+        const data = await fetchStreamflowData();
 
-        console.log("Networks to load:", networksToLoad);
+        const geoJSON = streamflowToGeoJSON(data);
 
-        const datasets = await fetchSelectedNetworkData(networksToLoad);
-
-        if (cancelled) return;
-
-        const combinedData = {};
-        const combinedFeatures = [];
-
-        for (const { networkId, data } of datasets) {
-          const dataWithIcons = Object.fromEntries(
-            Object.entries(data).map(([id, sensor]) => {
-              const allSiteRecord = allSitesMap[id];
-
-              return [
-                id,
-                {
-                  ...sensor,
-                  Icon:
-                    sensor.Icon ??
-                    sensor.icon ??
-                    allSiteRecord?.Icon ??
-                    allSiteRecord?.icon ??
-                    null,
-                },
-              ];
-            }),
-          );
-
-          const geoJSON = streamflowToGeoJSON(dataWithIcons);
-
-          combinedFeatures.push(...geoJSON.features);
-          Object.assign(combinedData, dataWithIcons);
-        }
-
-        if (cancelled) return;
-
-        setSensorDataById(combinedData);
-
-        setSensorGeoJSON({
-          type: "FeatureCollection",
-          features: combinedFeatures,
-        });
-
-        console.log("Loaded networks:", networksToLoad);
-        console.log("Loaded features:", combinedFeatures.length);
-      } catch (error) {
         if (!cancelled) {
-          console.error("Sensor loading error:", error);
+          setSensorGeoJSON(geoJSON);
+
+          console.log("Sensors:", geoJSON.features.length);
+        }
+      } catch (error) {
+        console.error("Sensor loading error:", error);
+
+        if (!cancelled) {
           setSensorError(error.message);
         }
       } finally {
@@ -452,163 +198,43 @@ export default function MapScreen() {
     return () => {
       cancelled = true;
     };
-  }, [activeLayer, selectedNetworks]);
+  }, []);
+
+  // // Weather animation
+  // useEffect(() => {
+  //   if (!showWeather) {
+  //     return;
+  //   }
+
+  //   const interval = setInterval(() => {
+  //     setWeatherFrame((current) => {
+  //       return current >= 72 ? 1 : current + 1;
+  //     });
+  //   }, 200);
+
+  //   return () => clearInterval(interval);
+  // }, [showWeather, setWeatherFrame]);
+
+  function handleSensorPress(event) {
+    const features = event?.nativeEvent?.features;
+
+    if (!features?.length) {
+      return;
+    }
+
+    setSelectedSensor(features[0].properties);
+  }
 
   return (
     <View style={styles.container}>
-      {activeLayer === "streams" && (
-        <SensorSearchBar
-          sensors={sensorGeoJSON?.features ?? []}
-          onSearch={setSensorSearchQuery}
-          onSelect={(feature) => {
-            const sensorId = String(feature.properties?.sensorId ?? "");
-
-            if (sensorId && Object.keys(allSitesMap).length > 0) {
-              const related = getRelatedSensors(
-                sensorId,
-                allSitesMap,
-                relatedSensorsMap,
-                sensorDataById,
-              );
-
-              const relatedGeoJSON = relatedSensorsToGeoJSON(
-                related,
-                sensorId,
-                allSitesMap,
-              );
-
-              setSearchedSensorId(sensorId);
-              setRelatedSensorGeoJSON(relatedGeoJSON);
-
-              console.log("Selected sensor with related sensors:", {
-                sensorId,
-                relatedSensors: related,
-              });
-            }
-
-            centerOnSensor?.(feature);
-
-            handleSensorPress({ features: [feature] });
-          }}
-
-          // onSelect={(feature) => {
-          //   const sensorId = String(feature.properties?.sensorId ?? "");
-
-          //   if (sensorId && Object.keys(allSitesMap).length > 0) {
-          //     // const related = getRelatedSensors(
-          //     //   sensorId,
-          //     //   allSitesMap,
-          //     //   relatedSensorsMap,
-          //     // );
-
-          //     // console.log("||||||||||||||||||||||||");
-          //     // console.log("Selected sensor ID:", sensorId);
-          //     // console.log("ALL sites loaded:", Object.keys(allSitesMap).length);
-          //     // console.log(
-          //     //   "Relationship map loaded:",
-          //     //   Object.keys(relatedSensorsMap).length,
-          //     // );
-          //     // console.log("Related sensor count:", Object.keys(related).length);
-          //     // console.log("Related sensor IDs:", Object.keys(related));
-          //     // console.log(
-          //     //   "Related sensor sample:",
-          //     //   Object.entries(related).slice(0, 3),
-          //     // );
-          //     // console.log("||||||||||||||||||||||||");
-
-          //     // setRelatedSensors(related);
-          //     // setSearchedSensorId(sensorId);
-          //     // setRelatedSensorGeoJSON(
-          //     //   relatedSensorsToGeoJSON(related, sensorId),
-          //     // );
-
-          //     const related = getRelatedSensors(
-          //       sensorId,
-          //       allSitesMap,
-          //       relatedSensorsMap,
-          //       sensorDataById,
-          //     );
-
-          //     console.log("Related sensors with time-series data:", related);
-
-          //     console.log(
-          //       "Sensors with time-series data:",
-          //       Object.values(related).filter((sensor) => sensor.hasTimeSeries)
-          //         .length,
-          //     );
-
-          //     console.log(
-          //       "Sensors missing time-series data:",
-          //       Object.values(related)
-          //         .filter((sensor) => !sensor.hasTimeSeries)
-          //         .map((sensor) => sensor.sensorId),
-          //     );
-
-          //     // setRelatedSensors(related);
-          //     // setSearchedSensorId(sensorId);
-
-          //     // setRelatedSensorGeoJSON(
-          //     //   relatedSensorsToGeoJSON(related, sensorId),
-          //     // );
-
-          //     setRelatedSensors(related);
-          //     setSearchedSensorId(sensorId);
-
-          //     const relatedGeoJSON = relatedSensorsToGeoJSON(related, sensorId);
-
-          //     console.log(
-          //       "RELATED SENSOR GEOJSON:",
-          //       JSON.stringify(relatedGeoJSON, null, 2),
-          //     );
-
-          //     setRelatedSensorGeoJSON(
-          //       relatedSensorsToGeoJSON(related, sensorId, allSitesMap),
-          //     );
-          //   }
-
-          //   centerOnSensor?.(feature);
-          //   handleSensorPress({ features: [feature] });
-          // }}
-        />
-      )}
-
       <MowisMap
-        sensorGeoJSON={
-          activeLayer === "streams" ? filteredSensorGeoJSON : sensorGeoJSON
-        }
-        relatedSensorGeoJSON={relatedSensorGeoJSON}
+        sensorGeoJSON={sensorGeoJSON}
         onSensorPress={handleSensorPress}
         onFloodPress={handleFloodPress}
         onRailroadPress={handleRailroadPress}
-        sensorBasin={sensorBasin}
-        sensorFlowlines={sensorFlowlines}
-        onCenterOnSensorReady={(fn) => setCenterOnSensor(() => fn)}
       />
 
-      {selectedSensor && (
-        <Pressable
-          style={styles.sensorToggleButton}
-          onPress={() => setShowSensorInfo((visible) => !visible)}
-        >
-          <Text style={styles.sensorToggleText}>
-            {showSensorInfo ? "-" : "+"}
-          </Text>
-        </Pressable>
-      )}
-
-      {selectedSensor && showSensorInfo && (
-        <SensorDetailsModal
-          sensor={selectedSensor}
-          onClose={() => setShowSensorInfo(false)}
-        />
-      )}
-
-      {/* <TopLeftControls /> */}
-
-      {(activeLayer === "weather" ||
-        activeLayer === "flood" ||
-        activeLayer === "streams" ||
-        activeLayer === "railroad") && <TopLeftControls />}
+      <TopLeftControls />
 
       {activeLayer === "weather" && weatherType === "Current" && (
         <CurrentWeatherControls />
@@ -622,17 +248,17 @@ export default function MapScreen() {
         <CumulativeWeatherControls />
       )}
 
-      {activeLayer === "drought" && showDroughtCalendar && (
-        <DroughtCalendar
-          visible={showDroughtCalendar}
-          selectedDate={selectedDroughtDate}
-          onSelectDate={(date, imageNumber) => {
-            setSelectedDroughtDate(date);
-            setDroughtImageNumber(imageNumber);
-          }}
-          onClose={() => setShowDroughtCalendar(false)}
-        />
-      )}
+      <DroughtCalendar
+        visible={activeLayer === "drought"}
+        selectedDate={selectedDroughtDate}
+        onSelectDate={(date, imageNumber) => {
+          setSelectedDroughtDate(date);
+          setDroughtImageNumber(imageNumber);
+        }}
+        onClose={() => {
+          setActiveLayer("weather");
+        }}
+      />
 
       {/* <TopRightControls /> */}
 
@@ -652,9 +278,20 @@ export default function MapScreen() {
         </View>
       )}
 
+      <SensorDetailsModal
+        sensor={selectedSensor}
+        onClose={() => setSelectedSensor(null)}
+      />
+
       <FloodDetailsModal
         flood={selectedFlood}
         onClose={() => setSelectedFlood(null)}
+      />
+
+      <RailroadForecastModal
+        visible={selectedRailroad !== null}
+        railroad={selectedRailroad}
+        onClose={() => setSelectedRailroad(null)}
       />
 
       <BottomNavigation />
@@ -669,14 +306,20 @@ const styles = StyleSheet.create({
 
   loading: {
     position: "absolute",
+
     top: 55,
     left: 12,
+
     flexDirection: "row",
     alignItems: "center",
+
     backgroundColor: "white",
+
     paddingHorizontal: 12,
     paddingVertical: 10,
+
     borderRadius: 8,
+
     elevation: 4,
   },
 
@@ -686,31 +329,15 @@ const styles = StyleSheet.create({
 
   error: {
     position: "absolute",
+
     bottom: 90,
     left: 12,
     right: 12,
+
     backgroundColor: "#ffeeee",
+
     padding: 12,
+
     borderRadius: 8,
-  },
-
-  sensorToggleButton: {
-    position: "absolute",
-    bottom: 90,
-    right: 20,
-    width: 60,
-    height: 60,
-    backgroundColor: "#08067d",
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 15,
-    zIndex: 20,
-  },
-
-  sensorToggleText: {
-    color: "#FFFFFF",
-    fontSize: 30,
-    fontWeight: "400",
   },
 });

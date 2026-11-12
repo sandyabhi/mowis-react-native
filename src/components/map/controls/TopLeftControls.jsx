@@ -38,6 +38,10 @@ export default function TopLeftControls({ onSensorSearch }) {
     setDroughtImageNumber,
     selectedNetworks,
     setSelectedNetworks,
+    showWaterwayCrossings,
+    setShowWaterwayCrossings,
+    showRailroads,
+    setShowRailroads,
   } = useMap();
 
   function toggleNetwork(id) {
@@ -159,6 +163,24 @@ export default function TopLeftControls({ onSensorSearch }) {
       );
     }
 
+    if (activeLayer === "railroad") {
+      return (
+        <View style={styles.railMenuContainer}>
+          <CheckboxOption
+            label="Waterway Crossings"
+            selected={showWaterwayCrossings}
+            onPress={() => setShowWaterwayCrossings((current) => !current)}
+          />
+
+          <CheckboxOption
+            label="Railroads"
+            selected={showRailroads}
+            onPress={() => setShowRailroads((current) => !current)}
+          />
+        </View>
+      );
+    }
+
     return null;
   }
 
@@ -277,6 +299,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#333",
     marginBottom: 12,
+  },
+
+  railMenuContainer: {
+    width: 390,
+    maxHeight: 500,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+
+  railMenu: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
 
   checkboxOption: {
